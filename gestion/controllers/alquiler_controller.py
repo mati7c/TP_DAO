@@ -49,3 +49,47 @@ def crear_alquiler(request):
             return JsonResponse({"error": f"Error interno: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+@csrf_exempt
+def iniciar_alquiler(request, id_alquiler):
+    if request.method == 'POST':
+        try:
+            # Llamamos al servicio para cambiar el estado a 'Alquilado' (entrega de llaves)
+            service.iniciar_alquiler(id_alquiler)
+
+            return JsonResponse({
+                "message": "Vehículo entregado. Estado actualizado a Alquilado.",
+                "id_alquiler": id_alquiler
+            }, status=200)
+
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"Error interno: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+@csrf_exempt
+def finalizar_alquiler(request, id_alquiler):
+    """
+    Endpoint para cerrar el alquiler.
+    NO recibe JSON. Calcula todo automáticamente basándose en el ID y la fecha de hoy.
+    """
+    if request.method == 'POST':
+        try:
+            # Llamada simplificada: Solo pasamos el ID
+            resultado = service.finalizar_alquiler(id_alquiler)
+
+            return JsonResponse({
+                "message": "Alquiler finalizado correctamente",
+                "detalle_cobro": resultado['detalle']
+            }, status=200)
+
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"Error interno: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)

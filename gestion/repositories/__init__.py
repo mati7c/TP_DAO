@@ -2,3 +2,7 @@ from .cliente_repository import ClienteRepository
 from .empleado_repository import EmpleadoRepository
 from .vehiculo_repository import VehiculoRepository
 from .mantenimiento_repository import MantenimientoRepository
+from .dano_repository import DanoRepository
+from .multa_repository import MultaRepository
+from .tipo_dano_repository import TipoDanoRepository
+from .estado_repository import EstadoRepository

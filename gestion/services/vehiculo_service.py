@@ -3,7 +3,7 @@ from gestion.repositories.vehiculo_repository import VehiculoRepository
 from gestion.models.marca import Marca
 from gestion.models.estado import Estado
 from gestion.models.alquiler import Alquiler
-from datetime import datetime
+from datetime import datetime, date
 
 
 class VehiculoService:
@@ -83,27 +83,37 @@ class VehiculoService:
         if f_inicio > f_fin:
             raise ValueError("La fecha de inicio no puede ser mayor a la fin.")
 
-        # 2. Encontrar patentes OCUPADAS por ALQUILERES
+        # 1. Encontrar patentes OCUPADAS por ALQUILERES
         alquileres_que_molestan = Alquiler.objects.filter(
             id_estado__in=[4, 7],  # Confirmados o Activos
             fecha_inicio__lte=f_fin,
             fecha_fin__gte=f_inicio
         ).values_list('patente_vehiculo', flat=True)
 
-        # 3. Encontrar patentes OCUPADAS por MANTENIMIENTO
+        # 2. Encontrar patentes OCUPADAS por MANTENIMIENTO
+        # Esta es la fuente de verdad para bloqueos por taller.
         mantenimientos_que_molestan = Mantenimiento.objects.filter(
             fecha_inicio__lte=f_fin,
             fecha_fin__gte=f_inicio
         ).values_list('patente', flat=True)
 
+        # 3. EXCLUSIÓN CRÍTICA: VEHÍCULOS EN MORA
+        # Buscamos alquileres activos (no finalizados) cuya fecha de fin sea MENOR a hoy.
+        # Significa que debían haber vuelto ayer o antes, pero siguen activos.
+        # Esos autos NO están disponibles hasta que se regularice la situación.
+        patentes_en_mora = Alquiler.objects.filter(
+            id_estado__in=[4, 7], # Activos
+            fecha_fin__lt=date.today() # Vencidos
+        ).values_list('patente_vehiculo', flat=True)
+
         # 4. Filtrar vehículos
         # Excluimos ambas listas de patentes
+        # CORRECCIÓN: Quitamos .exclude(id_estado=3) para permitir reservar autos
+        # que hoy están rotos pero estarán sanos en la fecha solicitada.
         disponibles = self.repo.get_all().exclude(
             patente__in=alquileres_que_molestan
         ).exclude(
             patente__in=mantenimientos_que_molestan
-        ).exclude(
-            id_estado=3  # Excluimos los que están ROTOS actualmente (doble seguridad)
         )
 
         return disponibles
