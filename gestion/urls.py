@@ -2,7 +2,9 @@ from django.urls import path
 from gestion.controllers import (
     listar_clientes, crear_cliente, borrar_cliente,
     listar_empleados, crear_empleado, borrar_empleado,
-    listar_vehiculos, crear_vehiculo, borrar_vehiculo
+    listar_vehiculos, crear_vehiculo, borrar_vehiculo, buscar_vehiculos_disponibles,
+    listar_alquileres, crear_alquiler,
+    listar_mantenimientos, finalizar_mantenimiento,programar_mantenimiento
 )
 
 urlpatterns = [
@@ -20,4 +22,14 @@ urlpatterns = [
     path('vehiculos/', listar_vehiculos, name='listar_vehiculos'),
     path('vehiculos/crear/', crear_vehiculo, name='crear_vehiculo'),
     path('vehiculos/borrar/<str:patente>/', borrar_vehiculo, name='borrar_vehiculo'),
+    path('vehiculos/buscar/', buscar_vehiculos_disponibles, name='buscar_vehiculos'),
+
+    # Alquileres
+    path('alquileres/', listar_alquileres, name='listar_alquileres'),
+    path('alquileres/crear/', crear_alquiler, name='crear_alquiler'),
+
+    # Mantenimientos
+    path('mantenimientos/', listar_mantenimientos, name='listar_mantenimientos'),
+    path('mantenimientos/programar/', programar_mantenimiento, name='programar_mantenimiento'),
+    path('mantenimientos/finalizar/<int:id_mantenimiento>/', finalizar_mantenimiento, name='finalizar_mantenimiento'),
 ]

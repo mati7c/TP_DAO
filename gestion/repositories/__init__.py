@@ -1,3 +1,4 @@
 from .cliente_repository import ClienteRepository
 from .empleado_repository import EmpleadoRepository
 from .vehiculo_repository import VehiculoRepository
+from .mantenimiento_repository import MantenimientoRepository

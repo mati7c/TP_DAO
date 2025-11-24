@@ -1,30 +1,11 @@
-from django.urls import path
-from gestion.controllers import (
-    listar_clientes, crear_cliente, borrar_cliente,
-    listar_empleados, crear_empleado, borrar_empleado,
-    listar_vehiculos, crear_vehiculo, borrar_vehiculo, buscar_vehiculos_disponibles,
-    listar_alquileres, crear_alquiler
-)
+from django.contrib import admin
+from django.urls import path, include  # <--- No olvides importar include
 
 urlpatterns = [
-    # Clientes
-    path('clientes/', listar_clientes, name='listar_clientes'),
-    path('clientes/crear/', crear_cliente, name='crear_cliente'),
-    path('clientes/borrar/<int:dni>/', borrar_cliente, name='borrar_cliente'),
+    path('admin/', admin.site.urls),
 
-    # Empleados
-    path('empleados/', listar_empleados, name='listar_empleados'),
-    path('empleados/crear/', crear_empleado, name='crear_empleado'),
-    path('empleados/borrar/<int:dni>/', borrar_empleado, name='borrar_empleado'),
-
-    # Vehículos
-    path('vehiculos/', listar_vehiculos, name='listar_vehiculos'),
-    path('vehiculos/crear/', crear_vehiculo, name='crear_vehiculo'),
-    path('vehiculos/borrar/<str:patente>/', borrar_vehiculo, name='borrar_vehiculo'),
-    path('vehiculos/buscar/', buscar_vehiculos_disponibles, name='buscar_vehiculos'),
-
-    # Alquileres
-    path('alquileres/', listar_alquileres, name='listar_alquileres'),
-    path('alquileres/crear/', crear_alquiler, name='crear_alquiler'),
+    # Esta línea conecta el cerebro principal con tu archivo de la app
+    # Si no está esta línea, nada de lo que escribas en gestion/urls.py funcionará
+    path('', include('gestion.urls')),
 ]
 
