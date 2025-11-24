@@ -1,12 +1,9 @@
-from django.db import models
+from .persona import Persona
 
-class Empleado(models.Model):
-    dni = models.IntegerField(primary_key=True)
-    nombre = models.CharField(max_length=100)
-    apellido = models.CharField(max_length=100)
+
+class Empleado(Persona):
+    # Aquí solo lo específico de Empleado (si hubiera)
+    # legajo = models.CharField(...) # Si quisieras agregar legajo aparte del DNI
 
     class Meta:
         db_table = 'empleado'
-
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre}"

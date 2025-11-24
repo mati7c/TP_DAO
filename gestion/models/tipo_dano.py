@@ -6,7 +6,7 @@ class TipoDano(models.Model):
     costo_base = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
-        db_table = 'tipodaño' # Aquí sí podemos usar la ñ para que coincida con la BD
+        db_table = 'tipo_daño' # Aquí sí podemos usar la ñ para que coincida con la BD
 
     def __str__(self):
         return self.nombre

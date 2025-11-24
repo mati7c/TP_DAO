@@ -1,29 +1,63 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from gestion.services.empleado_service import EmpleadoService
 
 service = EmpleadoService()
 
-def listar_empleados(request):
-    empleados = service.listar_todos()
-    return render(request, 'gestion/empleados/listar.html', {'empleados': empleados})
 
+def listar_empleados(request):
+    # Obtenemos la lista de objetos del servicio
+    empleados = service.listar_todos()
+
+    # Serializamos a JSON
+    data = []
+    for e in empleados:
+        data.append({
+            "dni": e.dni,
+            "nombre": e.nombre,
+            "apellido": e.apellido
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+@csrf_exempt
 def crear_empleado(request):
     if request.method == 'POST':
         try:
-            service.crear_empleado(
-                dni=request.POST['dni'],
-                nombre=request.POST['nombre'],
-                apellido=request.POST['apellido']
+            # 1. Leer JSON del Body
+            data = json.loads(request.body)
+
+            # 2. Llamar al servicio
+            nuevo_empleado = service.crear_empleado(
+                dni=data['dni'],
+                nombre=data['nombre'],
+                apellido=data['apellido']
             )
-            messages.success(request, "Empleado registrado correctamente.")
-            return redirect('listar_empleados')
+
+            # 3. Respuesta exitosa
+            return JsonResponse({
+                "message": "Empleado creado exitosamente",
+                "empleado": {
+                    "dni": nuevo_empleado.dni,
+                    "nombre": nuevo_empleado.nombre,
+                    "apellido": nuevo_empleado.apellido
+                }
+            }, status=201)
+
         except ValueError as e:
-            messages.error(request, str(e))
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"Error del servidor: {str(e)}"}, status=500)
 
-    return render(request, 'gestion/empleados/crear.html')
+    return JsonResponse({"error": "Método no permitido"}, status=405)
 
+
+@csrf_exempt
 def borrar_empleado(request, dni):
-    service.borrar_empleado(dni)
-    messages.success(request, "Empleado eliminado.")
-    return redirect('listar_empleados')
+    # Soporta tanto DELETE como GET para facilitar pruebas simples
+    if service.borrar_empleado(dni):
+        return JsonResponse({"message": "Empleado eliminado correctamente"}, status=200)
+
+    return JsonResponse({"error": "Empleado no encontrado"}, status=404)

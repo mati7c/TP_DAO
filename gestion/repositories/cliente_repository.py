@@ -14,9 +14,10 @@ class ClienteRepository:
         except Cliente.DoesNotExist:
             return None
 
-    def create(self, datos):
-        # 'datos' es un diccionario con: dni, nombre, apellido
-        return Cliente.objects.create(**datos)
+    def save(self, cliente_instance):
+        # Recibe el OBJETO ya creado por la fábrica y lo guarda
+        cliente_instance.save()
+        return cliente_instance
 
     def update(self, dni, nuevos_datos):
         cliente = self.get_by_id(dni)

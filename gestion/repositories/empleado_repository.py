@@ -11,8 +11,12 @@ class EmpleadoRepository:
         except Empleado.DoesNotExist:
             return None
 
-    def create(self, datos):
-        return Empleado.objects.create(**datos)
+    def save(self, empleado_instance):
+        """
+        Recibe un OBJETO Empleado (creado por la Factory) y lo persiste.
+        """
+        empleado_instance.save()
+        return empleado_instance
 
     def update(self, dni, nuevos_datos):
         empleado = self.get_by_id(dni)

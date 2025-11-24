@@ -1,5 +1,6 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from gestion.services.vehiculo_service import VehiculoService
 
 service = VehiculoService()
@@ -7,38 +8,90 @@ service = VehiculoService()
 
 def listar_vehiculos(request):
     vehiculos = service.listar_vehiculos()
-    return render(request, 'gestion/vehiculos/listar.html', {'vehiculos': vehiculos})
+    data = []
+    for v in vehiculos:
+        data.append({
+            "patente": v.patente,
+            "modelo": v.modelo,
+            "color": v.color,
+            "marca": v.nombre_marca.nombre,  # Accedemos al atributo del objeto relacionado
+            "precio": float(v.precio_x_dia),  # Decimal a Float para JSON
+            "estado": v.id_estado.nombre  # Accedemos al atributo del objeto relacionado
+        })
+    return JsonResponse(data, safe=False)
 
 
+@csrf_exempt
 def crear_vehiculo(request):
     if request.method == 'POST':
         try:
-            # Recolectamos datos del formulario
-            service.crear_vehiculo(
-                patente=request.POST['patente'],
-                modelo=request.POST['modelo'],
-                color=request.POST['color'],
-                precio=request.POST['precio'],
-                # 'marca' y 'estado' son los 'name' de los <select> en el HTML
-                marca_nombre=request.POST['marca'],
-                estado_id=request.POST['estado']
+            # 1. Parseamos el JSON que viene del Body
+            data = json.loads(request.body)
+
+            # 2. Llamamos al servicio pasándole los datos crudos
+            nuevo_vehiculo = service.crear_vehiculo(
+                patente=data['patente'],
+                modelo=data['modelo'],
+                color=data['color'],
+                precio=data['precio'],  # En el JSON viene como "precio"
+                marca_nombre=data['marca'],  # En el JSON viene como "marca" (ej: "Toyota")
+                estado_id=data['estado_id']  # En el JSON viene como "estado_id" (ej: 1)
             )
-            messages.success(request, "Vehículo creado exitosamente.")
-            return redirect('listar_vehiculos')
+
+            # 3. Respuesta exitosa
+            return JsonResponse({
+                "message": "Vehículo creado exitosamente",
+                "patente": nuevo_vehiculo.patente
+            }, status=201)
 
         except ValueError as e:
-            messages.error(request, str(e))
+            # Errores de validación (patente corta, precio negativo, marca no existe)
+            return JsonResponse({"error": str(e)}, status=400)
+        except KeyError as e:
+            # Faltan campos en el JSON
+            return JsonResponse({"error": f"Falta el campo {str(e)} en el JSON"}, status=400)
         except Exception as e:
-            # Capturamos errores inesperados de base de datos
-            messages.error(request, f"Error del sistema: {str(e)}")
+            # Errores inesperados
+            return JsonResponse({"error": f"Error interno: {str(e)}"}, status=500)
 
-    # GET: Si entramos por primera vez o hubo error, cargamos los combos
-    # El método 'obtener_opciones_formulario' nos trae las Marcas y Estados
-    contexto = service.obtener_opciones_formulario()
-    return render(request, 'gestion/vehiculos/crear.html', contexto)
+    return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
+@csrf_exempt
 def borrar_vehiculo(request, patente):
-    service.eliminar_vehiculo(patente)
-    messages.success(request, "Vehículo eliminado.")
-    return redirect('listar_vehiculos')
+    if request.method in ['DELETE', 'GET']:  # Permitimos GET para facilitar pruebas rápidas
+        if service.eliminar_vehiculo(patente):
+            return JsonResponse({"message": "Vehículo eliminado"}, status=200)
+        return JsonResponse({"error": "No encontrado"}, status=404)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+def buscar_vehiculos_disponibles(request):
+    """
+    Endpoint: /vehiculos/buscar/?desde=2023-12-01&hasta=2023-12-05
+    """
+    desde = request.GET.get('desde')
+    hasta = request.GET.get('hasta')
+
+    if not desde or not hasta:
+        return JsonResponse({"error": "Faltan parámetros 'desde' y 'hasta'"}, status=400)
+
+    try:
+        # Llamamos al nuevo método del servicio
+        vehiculos = service.buscar_disponibles_por_fecha(desde, hasta)
+
+        # Serializamos la respuesta
+        data = []
+        for v in vehiculos:
+            data.append({
+                "patente": v.patente,
+                "modelo": v.modelo,
+                "marca": v.nombre_marca.nombre,
+                "precio": float(v.precio_x_dia),
+                "estado_actual": v.id_estado.nombre  # Para info, aunque sabemos que está libre
+            })
+        return JsonResponse(data, safe=False)
+
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)

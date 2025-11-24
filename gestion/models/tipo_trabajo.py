@@ -5,7 +5,7 @@ class TipoTrabajo(models.Model):
     descripcion = models.TextField(blank=True, null=True)
 
     class Meta:
-        db_table = 'tipotrabajo'
+        db_table = 'tipo_trabajo'
 
     def __str__(self):
         return self.nombre
