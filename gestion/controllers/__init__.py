@@ -10,3 +10,5 @@ from .alquiler_controller import listar_alquileres, crear_alquiler, iniciar_alqu
 from .mantenimiento_controller import listar_mantenimientos, finalizar_mantenimiento, programar_mantenimiento
 # Incidente
 from .incidente_controller import cargar_dano, cargar_multa
+# Reporte
+from .reporte_controller import reporte_historial_cliente, reporte_ranking_vehiculos, reporte_alquileres_periodo, reporte_facturacion_mensual

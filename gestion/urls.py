@@ -5,7 +5,8 @@ from gestion.controllers import (
     listar_vehiculos, crear_vehiculo, borrar_vehiculo, buscar_vehiculos_disponibles,
     listar_alquileres, crear_alquiler, iniciar_alquiler, finalizar_alquiler,
     listar_mantenimientos, finalizar_mantenimiento,programar_mantenimiento,
-    cargar_multa, cargar_dano
+    cargar_multa, cargar_dano,
+    reporte_historial_cliente, reporte_ranking_vehiculos, reporte_alquileres_periodo, reporte_facturacion_mensual,
 )
 
 urlpatterns = [
@@ -37,4 +38,10 @@ urlpatterns = [
     path('mantenimientos/', listar_mantenimientos, name='listar_mantenimientos'),
     path('mantenimientos/programar/', programar_mantenimiento, name='programar_mantenimiento'),
     path('mantenimientos/finalizar/<int:id_mantenimiento>/', finalizar_mantenimiento, name='finalizar_mantenimiento'),
+
+    # Reportes
+    path('reportes/historial-cliente/<int:dni>', reporte_historial_cliente, name='reporte_historial_cliente'),
+    path('reportes/reanking-vehiculo/', reporte_ranking_vehiculos, name='reporte_ranking_vehiculos'),
+    path('reportes/alquileres-periodo/', reporte_alquileres_periodo, name='reporte_alquileres_periodo'),
+    path('reportes/facturacion-mesnual/', reporte_facturacion_mensual, name='reporte_facturacion_mensual'),
 ]

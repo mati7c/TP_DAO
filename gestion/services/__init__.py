@@ -2,3 +2,4 @@ from .cliente_service import ClienteService
 from .empleado_service import EmpleadoService
 from .vehiculo_service import VehiculoService
 from .mantenimiento_service import MantenimientoService
+from .alquiler_service import AlquilerService

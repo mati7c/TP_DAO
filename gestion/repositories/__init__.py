@@ -6,3 +6,4 @@ from .dano_repository import DanoRepository
 from .multa_repository import MultaRepository
 from .tipo_dano_repository import TipoDanoRepository
 from .estado_repository import EstadoRepository
+from .reporte_repository import ReporteRepository
