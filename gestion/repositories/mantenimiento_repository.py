@@ -1,4 +1,5 @@
 from gestion.models.mantenimiento import Mantenimiento
+from datetime import date
 
 
 class MantenimientoRepository:
@@ -21,5 +22,4 @@ class MantenimientoRepository:
 
     def obtener_mantenimientos_activos(self, patente):
         # Busca mantenimientos donde la fecha de fin sea hoy o futuro
-        from datetime import date
         return Mantenimiento.objects.filter(patente=patente, fecha_fin__gte=date.today())

@@ -59,9 +59,6 @@ class AlquilerService:
 
         # --- 3. VALIDACIONES DE DISPONIBILIDAD ---
 
-        # A) Estado actual crítico: Si HOY está roto, no alquilamos.
-        if vehiculo.id_estado.id == 3:
-            raise ValueError("El vehículo está actualmente en mantenimiento y no puede ser alquilado.")
 
         # B) Colisión con Mantenimientos Programados
         colision_mantenimiento = Mantenimiento.objects.filter(

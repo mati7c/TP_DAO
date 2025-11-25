@@ -17,16 +17,20 @@ class MantenimientoService:
     def programar_mantenimiento(self, patente, id_tipo_trabajo, fecha_inicio_str, fecha_fin_str):
         # --- 1. Validar Fechas ---
         try:
+            # Forzamos que la fecha de inicio sea HOY, ignorando lo que venga del str si se desea
+            # O validamos que el str sea hoy.
+            # Según tu pedido: "solo se va a poder programar para que empiece hoy"
             f_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+
+            if f_inicio != date.today():
+                raise ValueError(f"El mantenimiento debe iniciar hoy ({date.today()}).")
+
             f_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
         except ValueError:
             raise ValueError("Formato de fecha inválido (AAAA-MM-DD)")
 
         if f_inicio > f_fin:
             raise ValueError("La fecha de inicio no puede ser posterior al fin.")
-
-        if f_inicio < date.today():
-            raise ValueError("No se puede programar mantenimiento en el pasado.")
 
         # --- 2. Validar Existencias ---
         try:
@@ -39,28 +43,29 @@ class MantenimientoService:
         except TipoTrabajo.DoesNotExist:
             raise ValueError("Tipo de trabajo inválido.")
 
-        # --- 3. VALIDACIÓN DE COLISIÓN (Crucial) ---
-        # Verificamos si hay ALQUILERES confirmados/activos en esas fechas
-        colision_alquiler = Alquiler.objects.filter(
+        # --- 3. VALIDACIONES DE DISPONIBILIDAD ---
+
+        # A) Verificar si el auto está ALQUILADO actualmente
+        # Si está en estado 'Alquilado' (2), no está en el taller.
+        if vehiculo.id_estado.id == 2:
+            raise ValueError("El vehículo está actualmente alquilado. Debe finalizar el alquiler primero.")
+
+        # B) Verificar MORA (Alquileres vencidos no devueltos)
+        # Buscamos alquileres activos cuya fecha de fin ya pasó.
+        mora_activa = Alquiler.objects.filter(
             patente_vehiculo=patente,
-            id_estado__in=[4, 7],  # Confirmado o Activo
-            fecha_inicio__lte=f_fin,
-            fecha_fin__gte=f_inicio
+            id_estado__in=[4, 7],  # Activos
+            fecha_fin__lt=date.today()
         ).exists()
 
-        if colision_alquiler:
-            raise ValueError(f"El vehículo tiene alquileres confirmados en esas fechas.")
+        if mora_activa:
+            raise ValueError("El vehículo tiene un alquiler en mora (no devuelto). No se puede enviar a mantenimiento.")
 
-        # Verificamos si hay OTROS MANTENIMIENTOS en esas fechas
-        from gestion.models.mantenimiento import Mantenimiento
-        colision_mantenimiento = Mantenimiento.objects.filter(
-            patente=patente,
-            fecha_inicio__lte=f_fin,
-            fecha_fin__gte=f_inicio
-        ).exists()
-
+        # C) Verificar colisión con MANTENIMIENTOS existentes
+        # (Por si ya había uno cargado para hoy)
+        colision_mantenimiento = self.repo.obtener_mantenimientos_activos(patente).exists()
         if colision_mantenimiento:
-            raise ValueError(f"El vehículo ya tiene otro mantenimiento en esas fechas.")
+            raise ValueError(f"El vehículo ya se encuentra en mantenimiento.")
 
         # --- 4. Crear Mantenimiento ---
         datos = {
@@ -72,15 +77,13 @@ class MantenimientoService:
         nuevo_mantenimiento = self.repo.create(datos)
 
         # --- 5. Actualizar Estado del Vehículo ---
-        # Si el mantenimiento empieza HOY, cambiamos el estado ya mismo.
-        # Si es futuro, el estado cambiará el día que corresponda (o manualmente).
-        if f_inicio == date.today():
-            try:
-                estado_mantenimiento = Estado.objects.get(pk=3)  # ID 3 = En Mantenimiento
-                vehiculo.id_estado = estado_mantenimiento
-                vehiculo.save()
-            except:
-                pass  # Si falla el estado, el mantenimiento igual se creó (bloqueo por fechas)
+        # Como empieza HOY sí o sí, cambiamos el estado inmediatamente.
+        try:
+            estado_mantenimiento = Estado.objects.get(pk=3)  # ID 3 = En Mantenimiento
+            vehiculo.id_estado = estado_mantenimiento
+            vehiculo.save()
+        except:
+            pass
 
         return nuevo_mantenimiento
 
@@ -89,9 +92,16 @@ class MantenimientoService:
         if not mantenimiento:
             raise ValueError("Mantenimiento no encontrado.")
 
-        # --- 1. Ajustar fecha fin a HOY ---
-        mantenimiento.fecha_fin = date.today()
-        self.repo.save(mantenimiento)
+        # --- 1. Validar Fecha de Finalización ---
+        # Regla: "solo se va a poder finalizar el dia de fecha:fin automaticamente"
+        hoy = date.today()
+
+        if hoy != mantenimiento.fecha_fin:
+            raise ValueError(f"No se puede finalizar antes de la fecha pactada ({mantenimiento.fecha_fin}).")
+
+        # Opcional: Si quieres ser estricto y que solo se finalice EL DIA exacto:
+        # if hoy != mantenimiento.fecha_fin: raise ValueError(...)
+        # Pero usualmente permitimos finalizarlo si ya pasó la fecha (hoy >= fin).
 
         # --- 2. Liberar Vehículo (Disponible) ---
         vehiculo = mantenimiento.patente
