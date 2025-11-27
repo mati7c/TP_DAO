@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gestion',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -48,6 +49,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -70,6 +73,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -77,8 +85,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'alquiler_vehiculos_db',  # El nombre que creaste en el paso 2
-        'USER': 'root',                   # Tu usuario de MySQL (usualmente root)
-        'PASSWORD': 'mati107c',                   # Tu contraseña (deja vacío si no tienes)
+        'USER': 'DAO',                   # Tu usuario de MySQL (usualmente root)
+        'PASSWORD': 'DAO',                   # Tu contraseña (deja vacío si no tienes)
         'HOST': 'localhost',              # O la IP de tu servidor
         'PORT': '3306',                   # Puerto por defecto de MySQL
         'OPTIONS': {
