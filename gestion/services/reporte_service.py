@@ -1,3 +1,4 @@
+from datetime import datetime, date
 from gestion.repositories.reporte_repository import ReporteRepository
 from gestion.models.cliente import Cliente
 

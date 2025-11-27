@@ -41,10 +41,10 @@ def reporte_ranking_vehiculos(request):
         return JsonResponse({"error": f"Error interno: {str(e)}"}, status=500)
 
 
-@api_view(['GET'])  # Mantengo @api_view si tienes DRF instalado, si no quítalo
+@api_view(['GET'])
 def reporte_alquileres_periodo(request):
     """
-    Endpoint: /reportes/periodo/?desde=2023-01-01&hasta=2023-12-31
+    Endpoint: /reportes/alquileres-periodo/?desde=2023-01-01&hasta=2023-12-31
     """
     desde = request.GET.get('desde')
     hasta = request.GET.get('hasta')
